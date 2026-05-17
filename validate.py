@@ -24,12 +24,23 @@ def validate(model, loader, gpu_id):
     y_pred = np.where(np.array(y_pred) >= 0.5, 1, 0)
 
     # Get AP
-    ap = average_precision_score(y_true, y_pred)
-    cm = confusion_matrix(y_true, y_pred)
+    y_true = np.array(y_true)
+    y_score = np.array(y_pred)
+    y_pred_label = np.where(y_score >= 0.5, 1, 0)
+
+    # Get AP using continuous prediction scores
+    ap = average_precision_score(y_true, y_score)
+
+    # Confusion matrix:
+    # [[tn, fp],
+    #  [fn, tp]]
+    cm = confusion_matrix(y_true, y_pred_label, labels=[0, 1])
     tn, fp, fn, tp = cm.ravel()
-    fnr = fn / (fn + tp)
-    fpr = fp / (fp + tn)
-    acc = accuracy_score(y_true, y_pred)
+
+    fnr = fn / (fn + tp) if (fn + tp) > 0 else 0
+    fpr = fp / (fp + tn) if (fp + tn) > 0 else 0
+    acc = accuracy_score(y_true, y_pred_label)
+
     return ap, fpr, fnr, acc
 
 

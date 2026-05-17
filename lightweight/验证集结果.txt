@@ -1,8 +1,7 @@
-acc: 0.9371697005284791 ap: 0.9217271120827291 fpr: 0.09602845287492591 fnr: 0.030250145433391506
 
 运行指令：
-CUDA_VISIBLE_DEVICES=3 python validate.py --gpu 0 --real_list_path ./datasets/val/0_real --fake_list_path ./datasets/val/1_fake --ckpt ./checkpoints/ckpt.pth
-前面的环境变量指定是为了让代码只能看见GPU3，代码只能看到GPU3时，会将实际上的GPU3当成GPU0来使用，所以代码里是gpu 0。
+前面的环境变量指定是为了让代码只能看见GPU3，代码只能看到GPU3时，
+会将实际上的GPU3当成GPU0来使用，所以代码里是gpu 0。
 
 CUDA_VISIBLE_DEVICES=3 python train.py \
   --real_list_path ./datasets/AVLips/0_real \
@@ -16,8 +15,16 @@ CUDA_VISIBLE_DEVICES=3 python train.py \
   --name LipFD_3090_Professional
 
 CUDA_VISIBLE_DEVICES=3 python validate.py \
-  --real_list_path ./datasets/debug_val_1000/0_real \
-  --fake_list_path ./datasets/debug_val_1000/1_fake \
+  --real_list_path ./datasets/AVLips/0_real \
+  --fake_list_path ./datasets/AVLips/1_fake \
   --ckpt ./checkpoints/ckpt.pth \
-  --batch_size 8 \
+  --batch_size 16 \
   --gpu 0
+
+CUDA_VISIBLE_DEVICES=3 python validate.py \
+  --real_list_path ./datasets/val/0_real \
+  --fake_list_path ./datasets/val/1_fake \
+  --ckpt ./checkpoints/ckpt.pth \
+  --batch_size 32 \
+  --gpu 0
+初步模型在验证集上得到的结果：acc: 0.9371697005284791 ap: 0.9217271120827291 fpr: 0.030250145433391506 fnr: 0.09602845287492591

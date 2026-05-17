@@ -40,6 +40,12 @@ pip install -r requirements.txt
 
 ## :wrench: Dataset Preprocess
 
+> **重要维护提醒**
+>
+> 不要随便修改 `data/datasets.py` 中的输入预处理逻辑，尤其不要改颜色通道、像素范围和归一化方式。
+> 该部分必须和原始 LipFD 模型训练时的输入分布保持一致。此前实验发现，修改颜色通道、`0-255`/`0-1` 像素范围或 Normalize 方式后，模型会严重偏置，几乎把样本全部判断为 `real`，导致验证结果完全失真。
+> 如果只是想提速，优先优化 `DataLoader` 参数、预处理缓存、磁盘 I/O 或并行策略，不要改变 `AVLip.__getitem__` 返回给模型的图像语义。
+
 **You can skip this section, if you only want to perform validation.**
 
 Download AVLips dataset and put it in the root directory. 
