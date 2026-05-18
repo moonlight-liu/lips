@@ -1,0 +1,18 @@
+{
+  "arch": "CLIP:ViT-L/14",
+  "total_params": 451130407,
+  "total_params_m": 451.130407,
+  "trainable_params": 451130407,
+  "trainable_params_m": 451.130407,
+  "encoder_params": 427616513,
+  "encoder_params_m": 427.616513,
+  "encoder_ratio": 0.947877833914219,
+  "backbone_params": 23513666,
+  "backbone_params_m": 23.513666,
+  "backbone_ratio": 0.05212166068867976,
+  "conv1_params": 228,
+  "conv1_params_k": 0.228,
+  "conv1_ratio": 5.053971012865023e-07,
+  "checkpoint_path": "./checkpoints/ckpt.pth",
+  "checkpoint_size_mb": 1721.4436893463135
+}
