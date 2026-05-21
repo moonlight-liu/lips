@@ -106,6 +106,8 @@ def append_loss_row(path, row):
                 "loss",
                 "cls_loss",
                 "ra_loss",
+                "weighted_ra_loss",
+                "ra_loss_weight",
                 "lr",
             ],
         )
@@ -136,11 +138,14 @@ def plot_loss_curve(csv_path, output_path):
     loss = [float(r["loss"]) for r in rows]
     cls_loss = [float(r["cls_loss"]) for r in rows]
     ra_loss = [float(r["ra_loss"]) for r in rows]
+    weighted_ra_loss = [float(r["weighted_ra_loss"]) for r in rows if "weighted_ra_loss" in r and r["weighted_ra_loss"]]
 
     plt.figure(figsize=(10, 6))
     plt.plot(steps, loss, label="total loss", linewidth=1.8)
     plt.plot(steps, cls_loss, label="classification loss", linewidth=1.2)
     plt.plot(steps, ra_loss, label="region awareness loss", linewidth=1.2)
+    if len(weighted_ra_loss) == len(steps):
+        plt.plot(steps, weighted_ra_loss, label="weighted RA loss", linewidth=1.2)
     plt.xlabel("Training step")
     plt.ylabel("Loss")
     plt.title("Region-light LipFD Training Loss")
@@ -208,6 +213,12 @@ def main():
     parser.add_argument("--epochs", type=int, default=5)
     parser.add_argument("--lr", type=float, default=1e-4)
     parser.add_argument("--weight_decay", type=float, default=1e-4)
+    parser.add_argument(
+        "--ra_loss_weight",
+        type=float,
+        default=1.0,
+        help="Weight applied to the region awareness loss: total_loss = cls_loss + ra_loss_weight * ra_loss.",
+    )
     parser.add_argument("--gpu", type=int, default=0)
     parser.add_argument("--loss_freq", type=int, default=50)
     parser.add_argument("--log_loss_every", type=int, default=10)
@@ -237,6 +248,7 @@ def main():
 
     device = torch.device(f"cuda:{args.gpu}" if torch.cuda.is_available() else "cpu")
     print(f"Device: {device}")
+    print(f"RA loss weight: {args.ra_loss_weight}")
 
     from lightweight.models import LipFDRegionLight
     from lightweight.models.lipfd_region_light import load_global_weights
@@ -296,7 +308,8 @@ def main():
             logits = output.flatten()
             cls_loss = criterion_cls(logits, label)
             ra_loss = region_awareness_loss(weights_max, weights_org)
-            loss = cls_loss + ra_loss
+            weighted_ra_loss = args.ra_loss_weight * ra_loss
+            loss = cls_loss + weighted_ra_loss
             loss.backward()
             optimizer.step()
 
@@ -304,6 +317,7 @@ def main():
             loss_value = float(loss.detach().cpu())
             cls_loss_value = float(cls_loss.detach().cpu())
             ra_loss_value = float(ra_loss.detach().cpu())
+            weighted_ra_loss_value = float(weighted_ra_loss.detach().cpu())
             running_loss += loss_value
             epoch_losses.append(loss_value)
             if args.log_loss_every and total_steps % args.log_loss_every == 0:
@@ -316,6 +330,8 @@ def main():
                         "loss": loss_value,
                         "cls_loss": cls_loss_value,
                         "ra_loss": ra_loss_value,
+                        "weighted_ra_loss": weighted_ra_loss_value,
+                        "ra_loss_weight": args.ra_loss_weight,
                         "lr": optimizer.param_groups[0]["lr"],
                     },
                 )

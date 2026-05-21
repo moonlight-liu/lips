@@ -519,3 +519,256 @@ bash lightweight/scripts/run_resnet34_pipeline.sh all
 ```
 
 注意：`scan` 只读取 `val_scores_best.csv`，不重新加载模型，不重新读取图片，只用于分析分数分布；正式对比仍以阈值 0.5 的验证结果为准。
+---
+
+## 2026-05-22 记录：ResNet34 Region-light 结果分析
+
+### 实验设置
+
+本轮实验只替换 Region Awareness 分支：ResNet18 -> ResNet34。其余设置保持与 ResNet18 实验一致：
+
+| Item | Setting |
+|---|---|
+| Global encoder | CLIP ViT-L/14 |
+| Global encoder weights | loaded from official ckpt and frozen |
+| Conv1 | loaded from official ckpt and frozen |
+| Region Awareness backbone | ResNet34 |
+| Trainable part | ResNet34 Region Awareness only |
+| Dataset | official-preprocessed `datasets/AVLips` |
+| Validation | `datasets/val` |
+| Threshold | official fixed threshold 0.5 |
+| LR | 1e-4 |
+| Batch size | 16 |
+| Epochs | 5 |
+| RA loss weight | 1.0 |
+
+### ResNet34 验证结果
+
+| Epoch | Train Loss | Val Acc | Val AP | FPR | FNR | Observation |
+|---:|---:|---:|---:|---:|---:|---|
+| 1 | 35.9546 | 0.6888 | 0.7903 | 0.5044 | 0.1144 | 偏向判 fake，FPR 很高 |
+| 2 | 36.4792 | 0.6098 | 0.8309 | 0.7551 | 0.0184 | 更强烈偏向判 fake |
+| 3 | 35.1880 | **0.8156** | 0.9151 | **0.0890** | 0.2816 | best acc，但偏保守，漏检 fake 较多 |
+| 4 | 35.0465 | 0.7284 | **0.9330** | 0.5230 | **0.0154** | 排序提升，但 0.5 阈值下偏 fake |
+| 5 | 34.9784 | 0.8065 | 0.9311 | 0.3397 | 0.0445 | 仍偏 fake，FPR 偏高 |
+
+Best checkpoint by validation accuracy:
+
+```text
+lightweight/results/checkpoints/region_resnet34_official_preprocess_ra1/best.pth
+best epoch: 3
+acc: 0.815619495008808
+ap: 0.9150544509676625
+fpr: 0.08900523560209424
+fnr: 0.2815649081209247
+```
+
+### ResNet34 Loss 行为
+
+按 `loss_history.csv` 统计，每轮平均 loss 如下：
+
+| Epoch | Total Loss | Cls Loss | RA Loss |
+|---:|---:|---:|---:|
+| 1 | 35.9978 | 0.6277 | 35.3701 |
+| 2 | 36.4791 | 0.5364 | 35.9427 |
+| 3 | 35.1728 | 0.4219 | 34.7509 |
+| 4 | 35.0367 | 0.2968 | 34.7399 |
+| 5 | 34.9713 | 0.2324 | 34.7388 |
+
+结论：
+
+- `cls_loss` 从 0.6277 下降到 0.2324，说明 ResNet34 分支确实在学习分类任务。
+- `RA loss` 仍然在 34.739 附近平台化，和 ResNet18 类似，导致 total loss 主要被 RA loss 主导。
+- 因此 total loss 不是判断模型是否变好的可靠指标，应该优先看 `cls_loss`、`AP`、`Acc/FPR/FNR`。
+
+### ResNet34 分数分布诊断
+
+Best checkpoint epoch 3 的保存分数：
+
+| Metric | Value |
+|---|---:|
+| AP | 0.9150544509676625 |
+| real mean score | 0.2110 |
+| fake mean score | 0.6403 |
+| real p50 | 0.1529 |
+| fake p50 | 0.6972 |
+| real p95 | 0.5776 |
+| fake p05 | 0.1790 |
+
+Epoch 5 latest 的保存分数：
+
+| Metric | Value |
+|---|---:|
+| AP | 0.9311441129206355 |
+| real mean score | 0.3880 |
+| fake mean score | 0.8568 |
+| real p50 | 0.3525 |
+| fake p50 | 0.9153 |
+| real p95 | 0.8458 |
+| fake p05 | 0.5189 |
+
+解释：
+
+- Epoch 3 的模型比较保守，real 分数低，但一部分 fake 分数也低，所以 FNR=0.2816，漏检 fake 较多。
+- Epoch 5 的 fake 分数整体升高，但 real 分数也被整体推高，导致很多 real 超过官方阈值 0.5，所以 FPR=0.3397。
+- 这说明 ResNet34 在当前训练设置下分数校准不稳定，并没有形成比 ResNet18 更好的 real/fake 分界。
+
+### 与 ResNet18 对比
+
+| Model | Params | bs=1 Synthetic Latency | bs=1 Synthetic FPS | Best Acc | Best AP | FPR | FNR |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| Region-light ResNet18 | 438.80M | 45.25 ms | 22.10 FPS | **0.8764** | **0.9591** | 0.1966 | 0.0492 |
+| Region-light ResNet34 | 448.90M | about 71.34 ms | about 14.02 FPS | 0.8156 | 0.9151 | **0.0890** | 0.2816 |
+
+### 为什么参数变大后效果反而更差
+
+参数更多并不必然更好，尤其是在本实验这种“只替换并重训局部分支”的设置下。ResNet34 变差的主要原因如下：
+
+1. **ResNet34 分支不是从官方 ResNet50 权重平滑继承来的**  
+   官方 checkpoint 中 Region Awareness 是 ResNet50。换成 ResNet34 后结构不同，无法直接加载 ResNet50 的 backbone 权重，因此 ResNet34 分支本质上是随机初始化后重新训练。参数变多只代表容量更大，不代表初始状态更接近官方模型。
+
+2. **当前训练只训练 Region Awareness，CLIP 和 conv1 冻结**  
+   CLIP 全局特征保持官方权重不动，新 ResNet34 分支需要自己适配固定的全局特征。容量更大的分支可能需要更谨慎的学习率、更多 epoch 或不同 loss 权重，否则容易出现分数分布漂移。
+
+3. **RA loss 仍然主导 total loss，且很快平台化**  
+   ResNet34 的 `cls_loss` 在下降，但 `RA loss` 卡在约 34.739。当前总 loss 中 RA loss 权重为 1.0，可能压住分类优化和分数校准，使模型在官方 0.5 阈值下不稳定。
+
+4. **验证结果表现为阈值附近校准不稳定**  
+   Epoch 3 偏保守，FPR 低但 FNR 高；epoch 5 偏激进，FNR 低但 FPR 高。说明模型不是稳定变好，而是在 real/fake 决策边界附近摇摆。
+
+5. **更大的模型也更容易过拟合或需要不同训练策略**  
+   ResNet34 容量比 ResNet18 大，但本轮只训练 5 epoch，学习率和 loss 权重沿用 ResNet18。相同训练策略不一定适合更大的 backbone。
+
+当前结论：
+
+```text
+在当前训练设置下，ResNet34 不适合作为下一阶段主线。
+它比 ResNet18 更大、更慢，验证集 acc/AP 也更低。
+下一步应回到 ResNet18，优先改训练策略和 RA loss 权重，而不是继续盲目增大 backbone。
+```
+
+### 下一步建议：ResNet18 训练策略改进
+
+推荐保留 ResNet18 作为当前轻量化 baseline，然后做训练策略对照实验：
+
+1. **加入 `ra_loss_weight` 参数**  
+   当前 RA loss 权重固定为 1.0，且 RA loss 数值约 34.739，远大于 cls loss。建议增加命令行参数，例如 `--ra_loss_weight 0.1` 或 `--ra_loss_weight 0.01`，观察分类指标是否更稳定。
+
+2. **做 RA loss warmup**  
+   前 1-2 个 epoch 只用分类 loss 或使用较小 RA loss 权重，等分类边界稳定后再逐步加入 RA loss。这样可能减少前期分数校准大幅漂移。
+
+3. **降低学习率做 ResNet18 复跑**  
+   当前 LR=1e-4。可以尝试 `5e-5`，目标是降低 epoch 间 FPR/FNR 摇摆。
+
+4. **保留官方阈值 0.5 作为正式结果**  
+   阈值扫描只用于分析分数分布，不用于主结果。正式对比继续用官方 `sigmoid(score) >= 0.5`。
+
+5. **先小规模对照，再全量训练**  
+   可以先用 2-3 epoch 检查趋势，确认 FPR/FNR 比 ResNet18 baseline 更稳定后，再跑完整 5-10 epoch。
+
+### 实时性判断
+
+一般视频实时检测常用标准：
+
+- 约 15 FPS：勉强实时，适合低频检测或离线辅助。
+- 约 24-30 FPS：常见实时视频体验，30 FPS 通常对应每帧约 33.3 ms。
+- 60 FPS：高实时性/低延迟交互，要求每帧约 16.7 ms。
+
+当前 ResNet18 合成测速：
+
+```text
+bs=1 latency: 45.25 ms/sample
+bs=1 throughput: 22.10 samples/s
+```
+
+因此 ResNet18 当前模型前向约为 22.10 FPS，已经接近实时，但还没有达到 30 FPS。并且这个结果是合成输入测速，不包含真实视频抽帧、音频 mel、图片读取和预处理 I/O；完整端到端系统的实际 FPS 会更低。
+---
+
+## 2026-05-22 修改记录：加入 `--ra_loss_weight` 训练参数
+
+### 修改目的
+
+前面 ResNet18 与 ResNet34 实验都观察到同一个现象：
+
+```text
+cls_loss 数值约 0.1 - 0.6
+ra_loss 数值约 34.7
+```
+
+原训练逻辑等价于：
+
+```text
+total_loss = cls_loss + 1.0 * ra_loss
+```
+
+因此 total loss 长期被 RA loss 主导，不利于观察分类分支是否稳定学习，也可能影响官方阈值 0.5 下的分数校准。为了做最小风险对照实验，本次只加入一个命令行参数，不改变默认行为。
+
+### 代码修改
+
+修改文件：
+
+```text
+lightweight/scripts/train_region_light.py
+```
+
+新增参数：
+
+```text
+--ra_loss_weight
+```
+
+默认值：
+
+```text
+1.0
+```
+
+新的 loss 计算方式：
+
+```text
+total_loss = cls_loss + ra_loss_weight * ra_loss
+```
+
+因此旧命令不传该参数时，仍然保持原来的训练逻辑；只有显式传入 `--ra_loss_weight 0.1` 时，RA loss 才会以 0.1 倍参与总 loss。
+
+同时，新的 `loss_history.csv` 会额外记录：
+
+```text
+weighted_ra_loss
+ra_loss_weight
+```
+
+方便后续区分“原始 RA loss 数值”和“真正参与反传的加权 RA loss”。
+
+### 下一轮实验计划
+
+实验名：
+
+```text
+region_resnet18_official_preprocess_ra0p1
+```
+
+实验目标：
+
+- backbone 回到当前更优的 ResNet18。
+- 保持官方阈值 0.5。
+- 保持官方预处理数据。
+- 保持 CLIP 与 conv1 加载官方权重并冻结。
+- 只将 RA loss 权重从 1.0 降到 0.1。
+- 观察 FPR/FNR 是否比 ResNet18 baseline 更稳定。
+
+ResNet18 baseline 结果：
+
+```text
+acc: 0.8763945978
+ap: 0.9591492795
+fpr: 0.1966259453
+fnr: 0.0491997629
+bs=1 synthetic FPS: 22.10
+```
+
+本轮 `ra_loss_weight=0.1` 的主要判断标准：
+
+- 如果 acc 上升且 FPR 下降，说明降低 RA loss 权重有效。
+- 如果 AP 下降很多，说明 RA loss 可能仍有必要，需要尝试 warmup 而不是简单降低。
+- 如果 FPR/FNR 仍大幅摇摆，下一步再尝试更小学习率 `5e-5` 或 RA loss warmup。
