@@ -4,8 +4,8 @@ from concurrent.futures import ProcessPoolExecutor, as_completed
 
 import cv2
 import librosa
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
 from librosa import feature as audio
 from tqdm import tqdm
 
@@ -22,103 +22,99 @@ AVLips
 
 N_EXTRACT = 10
 WINDOW_LEN = 5
+
 audio_root = "./AVLips/wav"
 video_root = "./AVLips"
 output_root = "./datasets/AVLips"
+
 labels = [(0, "0_real"), (1, "1_fake")]
 
 
-def get_spectrogram(audio_file):
-    data, sr = librosa.load(audio_file, sr=None)
+def get_spectrogram(audio_file, temp_path):
+    # Keep official semantics: librosa.load() resamples audio to 22050 Hz by default.
+    data, sr = librosa.load(audio_file)
     mel = librosa.power_to_db(audio.melspectrogram(y=data, sr=sr), ref=np.min)
-    mel = mel.astype(np.float32)
-    mel = (mel - mel.min()) / max(float(mel.max() - mel.min()), 1e-6)
-    return plt.get_cmap("viridis")(mel, bytes=True)[:, :, :3]
-
-
-def select_frame_indices(frame_count):
-    max_start = frame_count - WINDOW_LEN - 1
-    if max_start < 0:
-        return []
-    return np.linspace(0, max_start, N_EXTRACT, endpoint=True, dtype=np.int32).tolist()
+    plt.imsave(temp_path, mel)
 
 
 def process_video(task):
-    dataset_name, video_name, skip_existing, png_compression = task
-    root = os.path.join(video_root, dataset_name)
-    video_path = os.path.join(root, video_name)
-    name = os.path.splitext(video_name)[0]
-    audio_path = os.path.join(audio_root, dataset_name, f"{name}.wav")
-    output_dir = os.path.join(output_root, dataset_name)
-    expected_outputs = [
-        os.path.join(output_dir, f"{name}_{group}.png")
-        for group in range(N_EXTRACT)
-    ]
-
-    if skip_existing and all(os.path.exists(p) for p in expected_outputs):
-        return video_name, 0, None
-
-    if not os.path.exists(audio_path):
-        return video_name, 0, f"missing audio: {audio_path}"
+    dataset_name, video_name, temp_dir = task
+    root = f"{video_root}/{dataset_name}"
+    video_path = f"{root}/{video_name}"
+    name = video_name.split(".")[0]
+    audio_path = f"{audio_root}/{dataset_name}/{name}.wav"
+    output_dir = f"{output_root}/{dataset_name}"
+    temp_path = os.path.join(temp_dir, f"mel_{os.getpid()}.png")
 
     video_capture = cv2.VideoCapture(video_path)
     frame_count = int(video_capture.get(cv2.CAP_PROP_FRAME_COUNT))
-    frame_idx = select_frame_indices(frame_count)
-    if not frame_idx:
+    if frame_count <= WINDOW_LEN:
         video_capture.release()
         return video_name, 0, f"too few frames: {frame_count}"
 
+    # Official code used uint8; int32 keeps the same selected values without overflowing long videos.
+    frame_idx = np.linspace(
+        0,
+        frame_count - WINDOW_LEN - 1,
+        N_EXTRACT,
+        endpoint=True,
+        dtype=np.int32,
+    ).tolist()
+    frame_idx.sort()
     frame_sequence = [i for num in frame_idx for i in range(num, num + WINDOW_LEN)]
-    needed = set(frame_sequence)
+
     frame_list = []
     current_frame = 0
     while current_frame <= frame_sequence[-1]:
         ret, frame = video_capture.read()
         if not ret:
             video_capture.release()
-            return video_name, 0, f"failed at frame {current_frame}"
-        if current_frame in needed:
-            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-            frame_list.append(cv2.resize(frame, (500, 500), interpolation=cv2.INTER_AREA))
+            return video_name, 0, f"failed reading frame {current_frame}"
+        if current_frame in frame_sequence:
+            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGBA)
+            frame_list.append(cv2.resize(frame, (500, 500)))
         current_frame += 1
     video_capture.release()
 
-    mel = get_spectrogram(audio_path)
+    if not os.path.exists(audio_path):
+        return video_name, 0, f"missing audio: {audio_path}"
+
+    group = 0
+    get_spectrogram(audio_path, temp_path)
+    mel = plt.imread(temp_path) * 255
+    mel = mel.astype(np.uint8)
     mapping = mel.shape[1] / frame_count
-    saved = 0
-    for i in range(0, len(frame_list), WINDOW_LEN):
-        begin = int(np.round(frame_sequence[i] * mapping))
-        end = int(np.round((frame_sequence[i] + WINDOW_LEN) * mapping))
-        if end <= begin:
-            continue
-        sub_mel = cv2.resize(mel[:, begin:end], (500 * WINDOW_LEN, 500), interpolation=cv2.INTER_AREA)
-        frames = np.concatenate(frame_list[i : i + WINDOW_LEN], axis=1)
-        if frames.shape[1] != 500 * WINDOW_LEN:
-            continue
-        sample = np.concatenate((sub_mel[:, :, :3], frames[:, :, :3]), axis=0)
-        out_path = os.path.join(output_dir, f"{name}_{saved}.png")
-        cv2.imwrite(
-            out_path,
-            cv2.cvtColor(sample, cv2.COLOR_RGB2BGR),
-            [cv2.IMWRITE_PNG_COMPRESSION, png_compression],
-        )
-        saved += 1
 
-    return video_name, saved, None
+    for i in range(len(frame_list)):
+        idx = i % WINDOW_LEN
+        if idx == 0:
+            try:
+                begin = np.round(frame_sequence[i] * mapping)
+                end = np.round((frame_sequence[i] + WINDOW_LEN) * mapping)
+                sub_mel = cv2.resize(
+                    mel[:, int(begin) : int(end)], (500 * WINDOW_LEN, 500)
+                )
+                x = np.concatenate(frame_list[i : i + WINDOW_LEN], axis=1)
+                x = np.concatenate((sub_mel[:, :, :3], x[:, :, :3]), axis=0)
+                plt.imsave(f"{output_dir}/{name}_{group}.png", x)
+                group += 1
+            except ValueError:
+                return video_name, group, f"ValueError: {name}"
+
+    return video_name, group, None
 
 
-def run(max_sample=None, workers=1, skip_existing=True, png_compression=1):
+def run(max_sample=None, workers=1, temp_dir="./temp"):
+    os.makedirs(temp_dir, exist_ok=True)
     for _, dataset_name in labels:
-        output_dir = os.path.join(output_root, dataset_name)
-        os.makedirs(output_dir, exist_ok=True)
-
-        root = os.path.join(video_root, dataset_name)
+        os.makedirs(f"{output_root}/{dataset_name}", exist_ok=True)
+        root = f"{video_root}/{dataset_name}"
         video_list = sorted(v for v in os.listdir(root) if v.lower().endswith(".mp4"))
         if max_sample is not None:
             video_list = video_list[:max_sample]
 
         print(f"Handling {dataset_name}: {len(video_list)} videos")
-        tasks = [(dataset_name, v, skip_existing, png_compression) for v in video_list]
+        tasks = [(dataset_name, v, temp_dir) for v in video_list]
         failures = []
 
         if workers <= 1:
@@ -142,19 +138,13 @@ def run(max_sample=None, workers=1, skip_existing=True, png_compression=1):
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--max_sample", type=int, default=None, help="limit videos per class for a quick test")
-    parser.add_argument("--workers", type=int, default=max((os.cpu_count() or 2) // 2, 1))
-    parser.add_argument("--no_skip_existing", action="store_true", help="rewrite samples even when all expected images exist")
-    parser.add_argument("--png_compression", type=int, default=1, choices=range(10), metavar="[0-9]")
+    parser.add_argument("--max_sample", type=int, default=None)
+    parser.add_argument("--workers", type=int, default=1)
+    parser.add_argument("--temp_dir", default="./temp")
     return parser.parse_args()
 
 
 if __name__ == "__main__":
     args = parse_args()
     os.makedirs(output_root, exist_ok=True)
-    run(
-        max_sample=args.max_sample,
-        workers=args.workers,
-        skip_existing=not args.no_skip_existing,
-        png_compression=args.png_compression,
-    )
+    run(max_sample=args.max_sample, workers=args.workers, temp_dir=args.temp_dir)

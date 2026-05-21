@@ -1,0 +1,11 @@
+{
+  "clip": "ViT-L/14",
+  "backbone": "resnet18",
+  "total_params": 438795815,
+  "total_params_m": 438.795815,
+  "encoder_params": 427616513,
+  "encoder_params_m": 427.616513,
+  "backbone_params": 11179074,
+  "backbone_params_m": 11.179074,
+  "conv1_params": 228
+}

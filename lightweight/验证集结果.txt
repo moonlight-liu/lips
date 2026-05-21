@@ -27,4 +27,53 @@ CUDA_VISIBLE_DEVICES=3 python validate.py \
   --ckpt ./checkpoints/ckpt.pth \
   --batch_size 32 \
   --gpu 0
+
+CUDA_VISIBLE_DEVICES=3 python validate.py \
+  --real_list_path ./datasets/AVLips/0_real \
+  --fake_list_path ./datasets/AVLips/1_fake \
+  --ckpt ./checkpoints/ckpt.pth \
+  --batch_size 16 \
+  --gpu 0
 初步模型在验证集上得到的结果：acc: 0.9371697005284791 ap: 0.9217271120827291 fpr: 0.030250145433391506 fnr: 0.09602845287492591
+
+
+模型改进：
+1.使用ResNet18
+CUDA_VISIBLE_DEVICES=3 python lightweight/scripts/train_region_light.py \
+  --backbone resnet18 \
+  --teacher_ckpt ./checkpoints/ckpt.pth \
+  --real_list_path ./datasets/AVLips/0_real \
+  --fake_list_path ./datasets/AVLips/1_fake \
+  --val_real_list_path ./datasets/val/0_real \
+  --val_fake_list_path ./datasets/val/1_fake \
+  --batch_size 16 \
+  --num_workers 4 \
+  --epochs 3 \
+  --lr 1e-4 \
+  --max_train_batches 1000 \
+  --max_val_batches -1 \
+  --loss_freq 50 \
+  --log_loss_every 10 \
+  --name region_resnet18_stage1
+
+CUDA_VISIBLE_DEVICES=3 python lightweight/scripts/train_region_light.py \
+  --backbone resnet18 \
+  --teacher_ckpt ./checkpoints/ckpt.pth \
+  --real_list_path ./datasets/AVLips/0_real \
+  --fake_list_path ./datasets/AVLips/1_fake \
+  --val_real_list_path ./datasets/val/0_real \
+  --val_fake_list_path ./datasets/val/1_fake \
+  --batch_size 16 \
+  --num_workers 8 \
+  --epochs 10 \
+  --lr 1e-4 \
+  --max_train_batches -1 \
+  --max_val_batches -1 \
+  --loss_freq 100 \
+  --log_loss_every 20 \
+  --name region_resnet18_official_preprocess_ra1
+训练过程中看图：
+lightweight/results/checkpoints/region_resnet18_official_preprocess_ra1/history.json
+lightweight/results/checkpoints/region_resnet18_official_preprocess_ra1/val_metrics_curve.png
+lightweight/results/checkpoints/region_resnet18_official_preprocess_ra1/loss_curve.png
+

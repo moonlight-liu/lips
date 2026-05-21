@@ -1,0 +1,34 @@
+{
+  "backbone": "resnet18",
+  "device": "cuda:0",
+  "batch_results": [
+    {
+      "batch_size": 1,
+      "mean_ms": 45.246334513649344,
+      "median_ms": 45.2623781748116,
+      "throughput_samples_per_s": 22.10123782951595,
+      "latency_ms_per_sample": 45.246334513649344
+    },
+    {
+      "batch_size": 4,
+      "mean_ms": 70.6404139380902,
+      "median_ms": 70.64511068165302,
+      "throughput_samples_per_s": 56.62480975133626,
+      "latency_ms_per_sample": 17.66010348452255
+    },
+    {
+      "batch_size": 8,
+      "mean_ms": 128.1360264122486,
+      "median_ms": 128.0584605410695,
+      "throughput_samples_per_s": 62.43365136251232,
+      "latency_ms_per_sample": 16.017003301531076
+    },
+    {
+      "batch_size": 16,
+      "mean_ms": 241.9210128672421,
+      "median_ms": 241.80570151656866,
+      "throughput_samples_per_s": 66.13728923489688,
+      "latency_ms_per_sample": 15.120063304202631
+    }
+  ]
+}
