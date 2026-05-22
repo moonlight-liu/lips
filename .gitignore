@@ -6,3 +6,4 @@ datasets/*
 checkpoints/*
 temp/*
 *.pth
+web

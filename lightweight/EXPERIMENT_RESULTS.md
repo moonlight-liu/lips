@@ -772,3 +772,439 @@ bs=1 synthetic FPS: 22.10
 - 如果 acc 上升且 FPR 下降，说明降低 RA loss 权重有效。
 - 如果 AP 下降很多，说明 RA loss 可能仍有必要，需要尝试 warmup 而不是简单降低。
 - 如果 FPR/FNR 仍大幅摇摆，下一步再尝试更小学习率 `5e-5` 或 RA loss warmup。
+---
+
+## 2026-05-22 记录：ResNet18 + `ra_loss_weight=0.1` 结果分析
+
+### 实验设置
+
+本轮实验在 ResNet18 Region-light baseline 基础上，只修改 RA loss 权重：
+
+| Item | Setting |
+|---|---|
+| Backbone | ResNet18 |
+| CLIP encoder | ViT-L/14, loaded from official ckpt and frozen |
+| Conv1 | loaded from official ckpt and frozen |
+| Dataset | official-preprocessed `datasets/AVLips` |
+| Validation | `datasets/val` |
+| Official threshold | 0.5 |
+| LR | 1e-4 |
+| Batch size | 16 |
+| Epochs | 5 |
+| RA loss weight | 0.1 |
+| Run name | `region_resnet18_official_preprocess_ra0p1` |
+
+新的 loss 计算方式：
+
+```text
+total_loss = cls_loss + 0.1 * ra_loss
+```
+
+### 验证集结果
+
+| Epoch | Train Loss | Val Acc | Val AP | FPR | FNR | Observation |
+|---:|---:|---:|---:|---:|---:|---|
+| 1 | 4.0710 | 0.7325 | 0.8443 | 0.1053 | 0.4327 | 偏保守，漏检 fake 较多 |
+| 2 | 3.7880 | 0.8139 | 0.9433 | 0.0343 | 0.3408 | FPR 降低，但 FNR 仍高 |
+| 3 | 3.6987 | 0.7363 | 0.9362 | 0.0087 | 0.5234 | 极度保守，fake 漏检严重 |
+| 4 | 3.6511 | **0.8834** | 0.9711 | 0.1955 | **0.0362** | best acc，接近但略优于 ra1 baseline |
+| 5 | 3.6218 | 0.8658 | **0.9740** | **0.0145** | 0.2561 | AP 最高，但 0.5 阈值下 FNR 变高 |
+
+Best checkpoint by validation accuracy:
+
+```text
+lightweight/results/checkpoints/region_resnet18_official_preprocess_ra0p1/best.pth
+best epoch: 4
+acc: 0.8834409864944216
+ap: 0.9710679396425387
+fpr: 0.19546247818499127
+fnr: 0.03615886188500297
+```
+
+### 与 `ra_loss_weight=1.0` 的 ResNet18 baseline 对比
+
+| Model | RA Loss Weight | Best Acc | Best AP | FPR | FNR |
+|---|---:|---:|---:|---:|---:|
+| ResNet18 baseline | 1.0 | 0.8763945978 | 0.9591492795 | 0.1966259453 | 0.0491997629 |
+| ResNet18 ra0p1 | 0.1 | **0.8834409865** | **0.9710679396** | **0.1954624782** | **0.0361588619** |
+
+结论：
+
+- `ra_loss_weight=0.1` 相比 `1.0` 有轻微收益：Acc、AP、FNR 都改善。
+- FPR 几乎没有改善，仍约 0.195，说明 real 被误判为 fake 的问题仍然存在。
+- AP 明显提高，说明模型排序能力更好，但官方阈值 0.5 下的分数校准仍然不稳定。
+
+### Loss 行为
+
+按 `loss_history.csv` 统计每轮均值：
+
+| Epoch | Total Loss Mean | Cls Loss Mean | RA Loss Mean | Weighted RA Loss Mean |
+|---:|---:|---:|---:|---:|
+| 1 | 4.0651 | 0.5220 | 35.4309 | 3.5431 |
+| 2 | 3.7774 | 0.2975 | 34.7986 | 3.4799 |
+| 3 | 3.6933 | 0.2172 | 34.7618 | 3.4762 |
+| 4 | 3.6516 | 0.1752 | 34.7640 | 3.4764 |
+| 5 | 3.6229 | 0.1486 | 34.7425 | 3.4742 |
+
+解释：
+
+- 即使 RA loss 乘以 0.1，`weighted_ra_loss` 仍约为 3.47，大于 `cls_loss`。
+- 因此 total loss 曲线仍主要由 RA loss 贡献，分类 loss 的真实下降趋势会被遮住。
+- Loss 曲线的局部尖峰来自 batch 级记录，不能只看单个点判断训练是否坏掉，应该结合 epoch 均值和验证指标。
+
+### 分数分布诊断
+
+Best epoch 4:
+
+| Metric | Value |
+|---|---:|
+| AP | 0.9710679396 |
+| real mean score | 0.2440 |
+| fake mean score | 0.9012 |
+| real p50 | 0.1297 |
+| fake p50 | 0.9682 |
+| real p95 | 0.7705 |
+| fake p05 | 0.5396 |
+
+Latest epoch 5:
+
+| Metric | Value |
+|---|---:|
+| AP | 0.9739577869 |
+| real mean score | 0.0560 |
+| fake mean score | 0.7031 |
+| real p50 | 0.0151 |
+| fake p50 | 0.8304 |
+| real p95 | 0.2620 |
+| fake p05 | 0.0962 |
+
+解释：
+
+- Epoch 5 的 AP 比 epoch 4 更高，说明整体排序更好。
+- 但 epoch 5 的 `fake p05=0.0962`，说明分数最低的 5% fake 样本分数低于约 0.0962，远低于官方阈值 0.5。
+- 因此 epoch 5 虽然 AP 高，但官方阈值下 FNR=0.2561，fake 漏检变多。
+- 这说明当前模型主要问题不是“完全区分不了 real/fake”，而是不同 epoch 的分数尺度不稳定，导致固定阈值 0.5 下 FPR/FNR 摇摆。
+
+### 下一步：尝试 `ra_loss_weight=0.01`
+
+原因：
+
+```text
+0.1 * 34.7 ≈ 3.47
+0.01 * 34.7 ≈ 0.347
+```
+
+当 `ra_loss_weight=0.1` 时，加权后的 RA loss 仍明显大于 cls loss；而 `0.01` 会让加权 RA loss 与 cls loss 处在更接近的量级。下一轮实验用于验证：RA loss 权重进一步降低后，官方阈值 0.5 下的分数校准是否更稳定，尤其是 FPR/FNR 是否不再大幅摇摆。
+
+计划实验名：
+
+```text
+region_resnet18_official_preprocess_ra0p01
+```
+---
+
+## 2026-05-22 记录：ResNet18 + `ra_loss_weight=0.01` 结果分析
+
+### 实验设置
+
+本轮实验继续使用 ResNet18 Region-light，只将 RA loss 权重从 0.1 进一步降低到 0.01：
+
+| Item | Setting |
+|---|---|
+| Backbone | ResNet18 |
+| CLIP encoder | ViT-L/14, loaded from official ckpt and frozen |
+| Conv1 | loaded from official ckpt and frozen |
+| Dataset | official-preprocessed `datasets/AVLips` |
+| Validation | `datasets/val` |
+| Official threshold | 0.5 |
+| LR | 1e-4 |
+| Batch size | 16 |
+| Epochs | 5 |
+| RA loss weight | 0.01 |
+| Run name | `region_resnet18_official_preprocess_ra0p01` |
+
+Loss 计算方式：
+
+```text
+total_loss = cls_loss + 0.01 * ra_loss
+```
+
+### 验证集结果
+
+| Epoch | Train Loss | Val Acc | Val AP | FPR | FNR | Observation |
+|---:|---:|---:|---:|---:|---:|---|
+| 1 | 0.8509 | 0.8520 | 0.9432 | 0.0692 | 0.2282 | FPR 已较低，但 fake 漏检偏高 |
+| 2 | 0.6248 | 0.8464 | 0.9575 | 0.0320 | 0.2774 | 更保守，FNR 升高 |
+| 3 | 0.5509 | 0.6559 | 0.9582 | **0.0012** | 0.6935 | 极度保守，几乎不判 fake |
+| 4 | 0.5088 | **0.9181** | 0.9787 | 0.0797 | **0.0842** | best acc，FPR/FNR 较均衡 |
+| 5 | 0.4840 | 0.8773 | **0.9885** | 0.0047 | 0.2430 | 排序最好，但官方 0.5 阈值下偏保守 |
+
+Best checkpoint by validation accuracy:
+
+```text
+lightweight/results/checkpoints/region_resnet18_official_preprocess_ra0p01/best.pth
+best epoch: 4
+acc: 0.9180857310628303
+ap: 0.9786845795265804
+fpr: 0.07969749854566609
+fnr: 0.08417308832246592
+```
+
+### 与前两轮 ResNet18 对比
+
+| Model | RA Loss Weight | Best Acc | Best AP | FPR | FNR |
+|---|---:|---:|---:|---:|---:|
+| ResNet18 baseline | 1.0 | 0.8763945978 | 0.9591492795 | 0.1966259453 | 0.0491997629 |
+| ResNet18 ra0p1 | 0.1 | 0.8834409865 | 0.9710679396 | 0.1954624782 | **0.0361588619** |
+| ResNet18 ra0p01 | 0.01 | **0.9180857311** | **0.9786845795** | **0.0796974985** | 0.0841730883 |
+
+结论：
+
+- `ra_loss_weight=0.01` 是目前三轮 ResNet18 实验中官方阈值 0.5 下最好的结果。
+- 相比 `ra_loss_weight=1.0`，Acc 从 0.8764 提升到 0.9181，FPR 从 0.1966 降到 0.0797，AP 从 0.9591 提升到 0.9787。
+- FNR 从 0.0492 升到 0.0842，说明降低 RA loss 后模型不再过度偏 fake，但会稍微增加 fake 漏检。
+- 整体看，`0.01` 比 `0.1` 明显更均衡，尤其是 FPR 得到明显改善。
+
+### Loss 行为
+
+按 `loss_history.csv` 统计每轮均值：
+
+| Epoch | Total Loss Mean | Cls Loss Mean | RA Loss Mean | Weighted RA Loss Mean |
+|---:|---:|---:|---:|---:|
+| 1 | 0.8508 | 0.4847 | 36.6103 | 0.3661 |
+| 2 | 0.6240 | 0.2738 | 35.0159 | 0.3502 |
+| 3 | 0.5416 | 0.1931 | 34.8498 | 0.3485 |
+| 4 | 0.5185 | 0.1701 | 34.8333 | 0.3483 |
+| 5 | 0.4785 | 0.1300 | 34.8423 | 0.3484 |
+
+解释：
+
+- 当 `ra_loss_weight=0.01` 时，加权后的 RA loss 约为 0.35，已经和 cls loss 在同一数量级。
+- 这比 `ra_loss_weight=0.1` 更合理；上一轮加权 RA loss 约为 3.47，仍明显大于 cls loss。
+- Total loss 随 epoch 稳定下降，说明训练本身没有崩。
+- RA loss 原始值仍然平台化在约 34.8，说明 RA 约束本身仍难以继续下降，但其对总 loss 的支配作用已明显减弱。
+
+### 分数分布诊断
+
+Best epoch 4:
+
+| Metric | Value |
+|---|---:|
+| AP | 0.9786845795 |
+| real mean score | 0.1202 |
+| fake mean score | 0.8719 |
+| real p50 | 0.0224 |
+| fake p50 | 0.9747 |
+| real p95 | 0.6358 |
+| fake p05 | 0.3396 |
+
+Epoch 4 在官方阈值 0.5 下：
+
+```text
+acc: 0.9180857311
+fpr: 0.0796974985
+fnr: 0.0841730883
+tp: 1545
+tn: 1582
+fp: 137
+fn: 142
+```
+
+Latest epoch 5:
+
+| Metric | Value |
+|---|---:|
+| AP | 0.9885174111 |
+| real mean score | 0.0218 |
+| fake mean score | 0.7190 |
+| real p50 | 0.0026 |
+| fake p50 | 0.8601 |
+| real p95 | 0.1026 |
+| fake p05 | 0.0848 |
+
+Epoch 5 在官方阈值 0.5 下：
+
+```text
+acc: 0.8772753964
+fpr: 0.0046538685
+fnr: 0.2430349733
+```
+
+解释：
+
+- Epoch 5 的 AP 达到 0.9885，说明排序能力非常强。
+- 但 fake p05 下降到 0.0848，说明最低 5% 的 fake 分数很低，远低于官方阈值 0.5，因此 FNR 变高。
+- 这再次证明：模型能较好地区分样本顺序，但分数尺度仍会随 epoch 漂移；官方阈值 0.5 下，应选择 epoch 4 的 best checkpoint，而不是 AP 最高的 epoch 5。
+
+### 阈值扫描诊断
+
+注意：正式对比仍使用官方阈值 0.5，以下仅用于理解分数分布。
+
+Best epoch 4:
+
+| Threshold | Acc | FPR | FNR |
+|---:|---:|---:|---:|
+| 0.5 official | 0.9181 | 0.0797 | 0.0842 |
+| 0.465 best acc | 0.9190 | 0.0884 | 0.0735 |
+| 0.64 FPR<=0.05 | 0.9119 | 0.0494 | 0.1274 |
+
+Latest epoch 5:
+
+| Threshold | Acc | FPR | FNR |
+|---:|---:|---:|---:|
+| 0.5 official | 0.8773 | 0.0047 | 0.2430 |
+| 0.105 best acc | 0.9469 | 0.0494 | 0.0569 |
+
+解释：
+
+- Epoch 4 的最佳阈值 0.465 与官方阈值 0.5 很接近，说明 epoch 4 的分数校准相对较好。
+- Epoch 5 的最佳阈值约 0.105，离官方阈值 0.5 很远，说明 epoch 5 虽然排序更强，但分数整体偏低，不适合作为官方阈值结果。
+
+### 当前阶段结论
+
+```text
+ResNet18 + ra_loss_weight=0.01 是目前最优的 Region-light 结果。
+在官方阈值 0.5 下，best epoch=4，acc=0.9181，ap=0.9787，fpr=0.0797，fnr=0.0842。
+它显著优于 ra_loss_weight=1.0 和 0.1，也优于 ResNet34。
+```
+
+后续建议：
+
+1. 保留 `region_resnet18_official_preprocess_ra0p01/best.pth` 作为当前轻量化主线 checkpoint。
+2. 下一步不要继续降低到 0.001，优先尝试学习率 `5e-5` 或 RA loss warmup，目标是减少 epoch 间分数尺度漂移。
+3. 如果论文/汇报需要阶段性结果，可以把 `ra_loss_weight=0.01` 作为当前最佳轻量化模型，与官方 ResNet50 做速度-精度折中对比。
+---
+
+## 2026-05-22 最终对照：当前最佳 ResNet18 ra0p01 的参数量与速度
+
+### 当前主线 checkpoint
+
+当前轻量化主线模型：
+
+```text
+lightweight/results/checkpoints/region_resnet18_official_preprocess_ra0p01/best.pth
+```
+
+对应验证集结果，官方阈值 0.5：
+
+```text
+acc: 0.9180857311
+ap: 0.9786845795
+fpr: 0.0796974985
+fnr: 0.0841730883
+best epoch: 4
+```
+
+注意：官方原始 `validate.py` 中 AP 计算使用了阈值化后的预测值，而 `lightweight` 验证脚本使用连续 sigmoid 分数计算 AP。因此 Acc/FPR/FNR 可直接对比，AP 对比时需要注意脚本差异。
+
+### 参数量
+
+测量命令：
+
+```bash
+python lightweight/scripts/measure_region_light_params.py \
+  --backbone resnet18 \
+  --output ./lightweight/results/checkpoints/region_resnet18_official_preprocess_ra0p01/params_resnet18_ra0p01.json
+```
+
+结果：
+
+| Model | Total Params | Total Params (M) | CLIP Encoder Params (M) | Region Backbone Params (M) | Conv1 Params |
+|---|---:|---:|---:|---:|---:|
+| Original LipFD ResNet50 | about 451.13M | 451.13 | 427.62 | 23.51 | about 228 |
+| Region-light ResNet18 ra0p01 | 438,795,815 | 438.795815 | 427.616513 | 11.179074 | 228 |
+
+参数量结论：
+
+- 总参数从约 451.13M 降到 438.80M，减少约 12.33M，约减少 2.73%。
+- Region Awareness backbone 从约 23.51M 降到 11.18M，减少约 12.33M，约减少 52.45%。
+- 总参数下降不大是正常的，因为 CLIP ViT-L/14 仍有 427.62M 参数，是模型体积的主要来源。
+- 因此 ResNet 分支替换主要改善速度，而不是显著降低总模型大小。
+
+### 合成推理速度
+
+测量命令：
+
+```bash
+CUDA_VISIBLE_DEVICES=3 python lightweight/scripts/benchmark_region_light.py \
+  --backbone resnet18 \
+  --ckpt ./lightweight/results/checkpoints/region_resnet18_official_preprocess_ra0p01/best.pth \
+  --device cuda:0 \
+  --batch_sizes 1 4 8 16 \
+  --warmup 20 \
+  --iters 100 \
+  --output ./lightweight/results/checkpoints/region_resnet18_official_preprocess_ra0p01/speed_resnet18_ra0p01_best.json
+```
+
+结果：
+
+| Model | Batch Size | Mean Latency / Batch | Latency / Sample | Throughput |
+|---|---:|---:|---:|---:|
+| Region-light ResNet18 ra0p01 | 1 | 44.13 ms | 44.13 ms/sample | 22.66 samples/s |
+| Region-light ResNet18 ra0p01 | 4 | 70.15 ms | 17.54 ms/sample | 57.02 samples/s |
+| Region-light ResNet18 ra0p01 | 8 | 128.28 ms | 16.04 ms/sample | 62.36 samples/s |
+| Region-light ResNet18 ra0p01 | 16 | 241.74 ms | 15.11 ms/sample | 66.19 samples/s |
+
+与原始 ResNet50 合成测速对比：
+
+| Model | Batch Size | Mean Latency / Batch | Latency / Sample | Throughput | Speedup |
+|---|---:|---:|---:|---:|---:|
+| Original ResNet50 | 1 | 98.71 ms | 98.71 ms/sample | 10.13 samples/s | 1.00x |
+| Region-light ResNet18 ra0p01 | 1 | 44.13 ms | 44.13 ms/sample | 22.66 samples/s | **2.24x** |
+| Original ResNet50 | 4 | 132.62 ms | 33.16 ms/sample | 30.16 samples/s | 1.00x |
+| Region-light ResNet18 ra0p01 | 4 | 70.15 ms | 17.54 ms/sample | 57.02 samples/s | **1.89x** |
+| Original ResNet50 | 8 | 190.14 ms | 23.77 ms/sample | 42.07 samples/s | 1.00x |
+| Region-light ResNet18 ra0p01 | 8 | 128.28 ms | 16.04 ms/sample | 62.36 samples/s | **1.48x** |
+| Original ResNet50 | 16 | 357.64 ms | 22.35 ms/sample | 44.74 samples/s | 1.00x |
+| Region-light ResNet18 ra0p01 | 16 | 241.74 ms | 15.11 ms/sample | 66.19 samples/s | **1.48x** |
+
+速度结论：
+
+- 单样本合成推理从 98.71 ms 降到 44.13 ms，约 2.24x 加速。
+- 单样本吞吐从约 10.13 FPS 提升到 22.66 FPS。
+- 当前模型前向速度已经接近实时，但仍未达到常见实时视频目标 30 FPS。
+- 该测速是合成输入的模型前向速度，不包含真实视频抽帧、音频 mel、图片读取和预处理 I/O；实际端到端 FPS 会更低。
+
+### 准确率与速度阶段结论
+
+| Model | Acc | AP | FPR | FNR | bs=1 FPS | bs=1 Latency |
+|---|---:|---:|---:|---:|---:|---:|
+| Official LipFD ResNet50 | about 0.9372 | about 0.9217* | about 0.0303 | about 0.0960 | about 10.13 | 98.71 ms |
+| Region-light ResNet18 ra0p01 | 0.9181 | 0.9787 | 0.0797 | 0.0842 | 22.66 | 44.13 ms |
+
+`*` Official AP 来自官方 `validate.py`，该脚本将分数阈值化后再计算 AP，因此与 lightweight 脚本的连续分数 AP 不完全等价。
+
+阶段性结论：
+
+```text
+当前 ResNet18 + ra_loss_weight=0.01 模型在保持较高准确率的同时，将单样本合成推理速度提升到约 2.24x。
+它是目前最适合作为轻量化主线的 checkpoint。
+下一阶段如果目标是进一步实时化，继续压 Region Awareness 的收益会变小，应该开始考虑 CLIP 分支或端到端推理流程。
+```
+
+### 下一阶段：CLIP 部分可改方向
+
+CLIP ViT-L/14 仍占 427.62M 参数，是总模型大小的主要来源。因此后续有三条路线：
+
+1. **先做 CLIP 特征缓存，用于训练和离线验证加速**  
+   当前训练中 CLIP encoder 冻结，每次训练仍要重新计算全图特征。可以预先缓存 `model.get_features(img)` 的结果，训练 Region Awareness 时直接读取特征。  
+   优点：不改变模型结构，不影响精度，能显著加快训练/验证。  
+   缺点：对最终实时部署帮助有限，因为真实推理时仍需要计算 CLIP 特征。
+
+2. **替换 CLIP backbone：ViT-L/14 -> ViT-B/16 或 ViT-B/32**  
+   这是压缩总参数和推理速度最直接的方向。  
+   优点：参数量和计算量会明显下降，更接近实时部署。  
+   风险：官方 checkpoint 的 CLIP ViT-L/14 权重无法直接复用到 ViT-B，必须重新训练或至少重新适配分类头/Region 分支，精度可能明显下降。  
+   建议：先做测参和测速 smoke test，再做小规模训练验证，不要直接全量长跑。
+
+3. **做 CLIP 蒸馏：ViT-L/14 teacher -> 小 CLIP student**  
+   使用官方/当前最佳模型作为 teacher，让小 CLIP 学 teacher 的特征或 logits。  
+   优点：比直接换 ViT-B 更稳，有机会保留更多精度。  
+   缺点：实现复杂度更高，需要设计蒸馏 loss 和训练流程。
+
+建议顺序：
+
+```text
+先做 CLIP ViT-B/16 或 ViT-B/32 的参数量/速度 smoke test；
+确认速度收益足够大后，再决定是否做重新训练或蒸馏。
+```

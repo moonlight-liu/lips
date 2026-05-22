@@ -1,0 +1,102 @@
+{
+  "device": "cuda:0",
+  "backbone": "resnet18",
+  "warmup": 2,
+  "iters": 3,
+  "variants": [
+    {
+      "clip": "ViT-L/14",
+      "backbone": "resnet18",
+      "total_params": 438795815,
+      "total_params_m": 438.795815,
+      "encoder_params": 427616513,
+      "encoder_params_m": 427.616513,
+      "backbone_params": 11179074,
+      "backbone_params_m": 11.179074,
+      "conv1_params": 228,
+      "batch_results": [
+        {
+          "batch_size": 1,
+          "feature_shape": [
+            1,
+            768
+          ],
+          "clip_encode": {
+            "mean_ms": 14.782736077904701,
+            "median_ms": 14.781898818910122,
+            "min_ms": 14.773408882319927,
+            "max_ms": 14.792900532484055,
+            "latency_ms_per_sample": 14.782736077904701,
+            "throughput_samples_per_s": 67.64647591149713
+          },
+          "full_forward": {
+            "mean_ms": 43.97975125660499,
+            "median_ms": 44.113559648394585,
+            "min_ms": 42.993707582354546,
+            "max_ms": 44.83198653906584,
+            "latency_ms_per_sample": 43.97975125660499,
+            "throughput_samples_per_s": 22.737736604406496
+          }
+        }
+      ]
+    },
+    {
+      "clip": "ViT-B/16",
+      "backbone": "resnet18",
+      "total_params": 160800039,
+      "total_params_m": 160.800039,
+      "encoder_params": 149620737,
+      "encoder_params_m": 149.620737,
+      "backbone_params": 11179074,
+      "backbone_params_m": 11.179074,
+      "conv1_params": 228,
+      "batch_results": [
+        {
+          "batch_size": 1,
+          "feature_shape": [
+            1,
+            512
+          ],
+          "clip_encode": {
+            "mean_ms": 6.3099972903728485,
+            "median_ms": 6.301399320363998,
+            "min_ms": 6.299475207924843,
+            "max_ms": 6.329117342829704,
+            "latency_ms_per_sample": 6.3099972903728485,
+            "throughput_samples_per_s": 158.4786734418568
+          },
+          "full_forward_error": "RuntimeError: mat1 and mat2 shapes cannot be multiplied (1x1024 and 1280x1)"
+        }
+      ]
+    },
+    {
+      "clip": "ViT-B/32",
+      "backbone": "resnet18",
+      "total_params": 162456615,
+      "total_params_m": 162.456615,
+      "encoder_params": 151277313,
+      "encoder_params_m": 151.277313,
+      "backbone_params": 11179074,
+      "backbone_params_m": 11.179074,
+      "conv1_params": 228,
+      "batch_results": [
+        {
+          "batch_size": 1,
+          "feature_shape": [
+            1,
+            512
+          ],
+          "clip_encode": {
+            "mean_ms": 5.311794579029083,
+            "median_ms": 5.311056040227413,
+            "min_ms": 5.242607556283474,
+            "max_ms": 5.381720140576363,
+            "latency_ms_per_sample": 5.311794579029083,
+            "throughput_samples_per_s": 188.26029228389044
+          },
+          "full_forward_error": "RuntimeError: mat1 and mat2 shapes cannot be multiplied (1x1024 and 1280x1)"
+        }
+      ]
+    }
+  ]
+}
