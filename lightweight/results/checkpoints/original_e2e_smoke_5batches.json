@@ -1,0 +1,59 @@
+{
+  "arch": "CLIP:ViT-L/14",
+  "ckpt": "./checkpoints/ckpt.pth",
+  "threshold": 0.5,
+  "batch_size": 16,
+  "num_workers": 12,
+  "prefetch_factor": 4,
+  "persistent_workers": true,
+  "device": "cuda:0",
+  "params": {
+    "total": 451130407,
+    "total_m": 451.130407
+  },
+  "metrics": {
+    "acc": 0.775,
+    "ap": -0.0,
+    "ap_continuous": -0.0,
+    "ap_thresholded_like_official_validate": -0.0,
+    "fpr": 0.225,
+    "fnr": 0.0,
+    "tp": 0,
+    "tn": 62,
+    "fp": 18,
+    "fn": 0
+  },
+  "timing": {
+    "num_samples": 80,
+    "num_batches": 5,
+    "total_seconds_including_metrics": 16.7023738976568,
+    "loop_seconds_excluding_metrics": 16.69065399747342,
+    "metric_seconds": 0.011719734407961369,
+    "data_wait_seconds": 9.92170565854758,
+    "transfer_forward_seconds": 5.788605371490121,
+    "score_collect_seconds": 0.0016685118898749352,
+    "other_loop_overhead_seconds": 0.9786744555458426,
+    "seconds_per_sample": 0.20877967372071,
+    "fps_including_metrics": 4.789738302483057,
+    "fps_excluding_metrics": 4.793101577212622,
+    "data_wait_ms_per_sample": 124.02132073184475,
+    "transfer_forward_ms_per_sample": 72.35756714362651,
+    "total_ms_per_sample": 208.77967372070998
+  },
+  "batch_timing_summary": {
+    "first_batch": {
+      "batch": 1,
+      "batch_size": 16,
+      "data_wait_ms": 9896.505105309188,
+      "transfer_forward_ms": 3979.6042954549193,
+      "score_collect_ms": 0.9772032499313354
+    },
+    "last_batch": {
+      "batch": 5,
+      "batch_size": 16,
+      "data_wait_ms": 0.7509700953960419,
+      "transfer_forward_ms": 447.32028897851706,
+      "score_collect_ms": 0.0890260562300682
+    }
+  }
+}

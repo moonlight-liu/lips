@@ -1,0 +1,323 @@
+{
+  "ckpt": "./lightweight/results/checkpoints/region_resnet18_clip_b32_ra0p01/best.pth",
+  "clip": "ViT-B/32",
+  "backbone": "resnet18",
+  "batch_size": 16,
+  "max_batches": 80,
+  "device": "cuda:0",
+  "runs": [
+    {
+      "num_workers": 4,
+      "prefetch_factor": 2,
+      "persistent_workers": true,
+      "batch_size": 16,
+      "metrics": {
+        "acc": 0.90859375,
+        "ap": -0.0,
+        "fpr": 0.09140625,
+        "fnr": 0.0,
+        "tp": 0,
+        "tn": 1163,
+        "fp": 117,
+        "fn": 0
+      },
+      "timing": {
+        "num_samples": 1280,
+        "num_batches": 80,
+        "total_seconds_including_metrics": 72.91493106912822,
+        "loop_seconds_excluding_metrics": 72.9006709260866,
+        "metric_seconds": 0.014259862713515759,
+        "data_wait_seconds": 63.912272814661264,
+        "transfer_forward_seconds": 8.826210904866457,
+        "score_collect_seconds": 0.009768383577466011,
+        "other_loop_overhead_seconds": 0.15241882298141718,
+        "seconds_per_sample": 0.05696478989775642,
+        "fps_including_metrics": 17.55470355977536,
+        "fps_excluding_metrics": 17.55813744564548,
+        "data_wait_ms_per_sample": 49.93146313645411,
+        "transfer_forward_ms_per_sample": 6.8954772694269195,
+        "total_ms_per_sample": 56.96478989775642
+      },
+      "batch_timing_summary": {
+        "first_batch": {
+          "batch": 1,
+          "batch_size": 16,
+          "data_wait_ms": 5436.0435316339135,
+          "transfer_forward_ms": 587.2984072193503,
+          "score_collect_ms": 0.25947205722332
+        },
+        "last_batch": {
+          "batch": 80,
+          "batch_size": 16,
+          "data_wait_ms": 0.19667670130729675,
+          "transfer_forward_ms": 101.06367524713278,
+          "score_collect_ms": 0.13604480773210526
+        }
+      }
+    },
+    {
+      "num_workers": 4,
+      "prefetch_factor": 4,
+      "persistent_workers": true,
+      "batch_size": 16,
+      "metrics": {
+        "acc": 0.90859375,
+        "ap": -0.0,
+        "fpr": 0.09140625,
+        "fnr": 0.0,
+        "tp": 0,
+        "tn": 1163,
+        "fp": 117,
+        "fn": 0
+      },
+      "timing": {
+        "num_samples": 1280,
+        "num_batches": 80,
+        "total_seconds_including_metrics": 72.3421255685389,
+        "loop_seconds_excluding_metrics": 72.3333423435688,
+        "metric_seconds": 0.0087829465046525,
+        "data_wait_seconds": 63.85582014545798,
+        "transfer_forward_seconds": 8.36706556007266,
+        "score_collect_seconds": 0.009386538527905941,
+        "other_loop_overhead_seconds": 0.10107009951025248,
+        "seconds_per_sample": 0.05651728560042102,
+        "fps_including_metrics": 17.69370183610783,
+        "fps_excluding_metrics": 17.695850330270346,
+        "data_wait_ms_per_sample": 49.88735948863905,
+        "transfer_forward_ms_per_sample": 6.536769968806766,
+        "total_ms_per_sample": 56.51728560042102
+      },
+      "batch_timing_summary": {
+        "first_batch": {
+          "batch": 1,
+          "batch_size": 16,
+          "data_wait_ms": 4882.5512658804655,
+          "transfer_forward_ms": 120.11983525007963,
+          "score_collect_ms": 0.2261074259877205
+        },
+        "last_batch": {
+          "batch": 80,
+          "batch_size": 16,
+          "data_wait_ms": 0.241120345890522,
+          "transfer_forward_ms": 102.87648905068636,
+          "score_collect_ms": 0.14859996736049652
+        }
+      }
+    },
+    {
+      "num_workers": 8,
+      "prefetch_factor": 2,
+      "persistent_workers": true,
+      "batch_size": 16,
+      "metrics": {
+        "acc": 0.90859375,
+        "ap": -0.0,
+        "fpr": 0.09140625,
+        "fnr": 0.0,
+        "tp": 0,
+        "tn": 1163,
+        "fp": 117,
+        "fn": 0
+      },
+      "timing": {
+        "num_samples": 1280,
+        "num_batches": 80,
+        "total_seconds_including_metrics": 40.65736697614193,
+        "loop_seconds_excluding_metrics": 40.64662252459675,
+        "metric_seconds": 0.010744141414761543,
+        "data_wait_seconds": 32.12302792817354,
+        "transfer_forward_seconds": 8.283045626245439,
+        "score_collect_seconds": 0.012067594565451145,
+        "other_loop_overhead_seconds": 0.22848137561231852,
+        "seconds_per_sample": 0.031763567950110885,
+        "fps_including_metrics": 31.48260930795431,
+        "fps_excluding_metrics": 31.49093136152765,
+        "data_wait_ms_per_sample": 25.09611556888558,
+        "transfer_forward_ms_per_sample": 6.471129395504249,
+        "total_ms_per_sample": 31.763567950110883
+      },
+      "batch_timing_summary": {
+        "first_batch": {
+          "batch": 1,
+          "batch_size": 16,
+          "data_wait_ms": 6580.747799016535,
+          "transfer_forward_ms": 111.55866831541061,
+          "score_collect_ms": 0.232047401368618
+        },
+        "last_batch": {
+          "batch": 80,
+          "batch_size": 16,
+          "data_wait_ms": 0.21368823945522308,
+          "transfer_forward_ms": 103.09434588998556,
+          "score_collect_ms": 0.13539567589759827
+        }
+      }
+    },
+    {
+      "num_workers": 8,
+      "prefetch_factor": 4,
+      "persistent_workers": true,
+      "batch_size": 16,
+      "metrics": {
+        "acc": 0.90859375,
+        "ap": -0.0,
+        "fpr": 0.09140625,
+        "fnr": 0.0,
+        "tp": 0,
+        "tn": 1163,
+        "fp": 117,
+        "fn": 0
+      },
+      "timing": {
+        "num_samples": 1280,
+        "num_batches": 80,
+        "total_seconds_including_metrics": 40.506175075657666,
+        "loop_seconds_excluding_metrics": 40.49670833721757,
+        "metric_seconds": 0.009466548450291157,
+        "data_wait_seconds": 31.901923762634397,
+        "transfer_forward_seconds": 8.333691732026637,
+        "score_collect_seconds": 0.011790098622441292,
+        "other_loop_overhead_seconds": 0.2493027439340949,
+        "seconds_per_sample": 0.03164544927785755,
+        "fps_including_metrics": 31.600120169559546,
+        "fps_excluding_metrics": 31.60750719148315,
+        "data_wait_ms_per_sample": 24.923377939558122,
+        "transfer_forward_ms_per_sample": 6.51069666564581,
+        "total_ms_per_sample": 31.64544927785755
+      },
+      "batch_timing_summary": {
+        "first_batch": {
+          "batch": 1,
+          "batch_size": 16,
+          "data_wait_ms": 5148.914015851915,
+          "transfer_forward_ms": 112.04329039901495,
+          "score_collect_ms": 0.30641164630651474
+        },
+        "last_batch": {
+          "batch": 80,
+          "batch_size": 16,
+          "data_wait_ms": 0.46995561569929123,
+          "transfer_forward_ms": 101.59857012331486,
+          "score_collect_ms": 0.20599830895662308
+        }
+      }
+    },
+    {
+      "num_workers": 12,
+      "prefetch_factor": 2,
+      "persistent_workers": true,
+      "batch_size": 16,
+      "metrics": {
+        "acc": 0.90859375,
+        "ap": -0.0,
+        "fpr": 0.09140625,
+        "fnr": 0.0,
+        "tp": 0,
+        "tn": 1163,
+        "fp": 117,
+        "fn": 0
+      },
+      "timing": {
+        "num_samples": 1280,
+        "num_batches": 80,
+        "total_seconds_including_metrics": 30.99298308417201,
+        "loop_seconds_excluding_metrics": 30.984421654604375,
+        "metric_seconds": 0.008561134338378906,
+        "data_wait_seconds": 22.310430329293013,
+        "transfer_forward_seconds": 8.31769744772464,
+        "score_collect_seconds": 0.009961515665054321,
+        "other_loop_overhead_seconds": 0.34633236192166805,
+        "seconds_per_sample": 0.024213268034509385,
+        "fps_including_metrics": 41.29967084884097,
+        "fps_excluding_metrics": 41.31108252620194,
+        "data_wait_ms_per_sample": 17.430023694760166,
+        "transfer_forward_ms_per_sample": 6.498201131034875,
+        "total_ms_per_sample": 24.213268034509383
+      },
+      "batch_timing_summary": {
+        "first_batch": {
+          "batch": 1,
+          "batch_size": 16,
+          "data_wait_ms": 8500.635532662272,
+          "transfer_forward_ms": 116.62390641868114,
+          "score_collect_ms": 0.17940346151590347
+        },
+        "last_batch": {
+          "batch": 80,
+          "batch_size": 16,
+          "data_wait_ms": 0.35021454095840454,
+          "transfer_forward_ms": 101.65282152593136,
+          "score_collect_ms": 0.10898243635892868
+        }
+      }
+    },
+    {
+      "num_workers": 12,
+      "prefetch_factor": 4,
+      "persistent_workers": true,
+      "batch_size": 16,
+      "metrics": {
+        "acc": 0.90859375,
+        "ap": -0.0,
+        "fpr": 0.09140625,
+        "fnr": 0.0,
+        "tp": 0,
+        "tn": 1163,
+        "fp": 117,
+        "fn": 0
+      },
+      "timing": {
+        "num_samples": 1280,
+        "num_batches": 80,
+        "total_seconds_including_metrics": 30.506428129971027,
+        "loop_seconds_excluding_metrics": 30.495031184516847,
+        "metric_seconds": 0.011396598070859909,
+        "data_wait_seconds": 21.821536890231073,
+        "transfer_forward_seconds": 8.306768213398755,
+        "score_collect_seconds": 0.01272132433950901,
+        "other_loop_overhead_seconds": 0.3540047565475106,
+        "seconds_per_sample": 0.023833146976539866,
+        "fps_including_metrics": 41.95837003750906,
+        "fps_excluding_metrics": 41.97405119067039,
+        "data_wait_ms_per_sample": 17.048075695493026,
+        "transfer_forward_ms_per_sample": 6.489662666717777,
+        "total_ms_per_sample": 23.833146976539865
+      },
+      "batch_timing_summary": {
+        "first_batch": {
+          "batch": 1,
+          "batch_size": 16,
+          "data_wait_ms": 5843.510736711323,
+          "transfer_forward_ms": 113.3525250479579,
+          "score_collect_ms": 0.5525927990674973
+        },
+        "last_batch": {
+          "batch": 80,
+          "batch_size": 16,
+          "data_wait_ms": 0.22831838577985764,
+          "transfer_forward_ms": 105.76211288571358,
+          "score_collect_ms": 0.15183910727500916
+        }
+      }
+    }
+  ],
+  "best_by_fps": {
+    "num_workers": 12,
+    "prefetch_factor": 4,
+    "persistent_workers": true,
+    "batch_size": 16,
+    "num_samples": 1280,
+    "num_batches": 80,
+    "fps_including_metrics": 41.95837003750906,
+    "total_ms_per_sample": 23.833146976539865,
+    "data_wait_ms_per_sample": 17.048075695493026,
+    "transfer_forward_ms_per_sample": 6.489662666717777,
+    "data_wait_seconds": 21.821536890231073,
+    "transfer_forward_seconds": 8.306768213398755,
+    "total_seconds": 30.506428129971027,
+    "acc": 0.90859375,
+    "ap": -0.0,
+    "fpr": 0.09140625,
+    "fnr": 0.0
+  }
+}

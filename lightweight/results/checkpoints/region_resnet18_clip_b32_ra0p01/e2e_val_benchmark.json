@@ -1,0 +1,58 @@
+{
+  "ckpt": "./lightweight/results/checkpoints/region_resnet18_clip_b32_ra0p01/best.pth",
+  "clip": "ViT-B/32",
+  "backbone": "resnet18",
+  "threshold": 0.5,
+  "batch_size": 16,
+  "num_workers": 8,
+  "device": "cuda:0",
+  "params": {
+    "total": 162456103,
+    "total_m": 162.456103,
+    "encoder_m": 151.277313,
+    "backbone_m": 11.178562
+  },
+  "metrics": {
+    "acc": 0.9266001174398121,
+    "ap": 0.9778793471246024,
+    "fpr": 0.089586969168121,
+    "fnr": 0.05690574985180794,
+    "tp": 1591,
+    "tn": 1565,
+    "fp": 154,
+    "fn": 96
+  },
+  "timing": {
+    "num_samples": 3406,
+    "num_batches": 213,
+    "total_seconds_including_metrics": 101.30023797601461,
+    "loop_seconds_excluding_metrics": 101.28616396244615,
+    "metric_seconds": 0.014073730446398258,
+    "data_wait_seconds": 77.37856066878885,
+    "transfer_forward_seconds": 23.52796277590096,
+    "score_collect_seconds": 0.02771793957799673,
+    "other_loop_overhead_seconds": 0.35192257817834616,
+    "seconds_per_sample": 0.029741702283034237,
+    "fps_including_metrics": 33.6228232830653,
+    "fps_excluding_metrics": 33.62749527430856,
+    "data_wait_ms_per_sample": 22.718309063061906,
+    "transfer_forward_ms_per_sample": 6.9077988185264125,
+    "total_ms_per_sample": 29.741702283034236
+  },
+  "batch_timing_summary": {
+    "first_batch": {
+      "batch": 1,
+      "batch_size": 16,
+      "data_wait_ms": 5583.711220882833,
+      "transfer_forward_ms": 1466.6205113753676,
+      "score_collect_ms": 0.2948874607682228
+    },
+    "last_batch": {
+      "batch": 213,
+      "batch_size": 14,
+      "data_wait_ms": 68.82588751614094,
+      "transfer_forward_ms": 206.30905125290155,
+      "score_collect_ms": 0.07773470133543015
+    }
+  }
+}

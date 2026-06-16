@@ -1,0 +1,12 @@
+{
+  "clip": "ViT-B/32",
+  "backbone": "resnet18",
+  "global_feature_dim": 512,
+  "total_params": 162456103,
+  "total_params_m": 162.456103,
+  "encoder_params": 151277313,
+  "encoder_params_m": 151.277313,
+  "backbone_params": 11178562,
+  "backbone_params_m": 11.178562,
+  "conv1_params": 228
+}

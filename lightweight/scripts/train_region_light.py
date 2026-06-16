@@ -202,6 +202,7 @@ def region_awareness_loss(weights_max, weights_org):
 
 def main():
     parser = argparse.ArgumentParser()
+    parser.add_argument("--clip_name", default="ViT-L/14", choices=["ViT-L/14", "ViT-B/16", "ViT-B/32"])
     parser.add_argument("--backbone", default="resnet18", choices=["resnet18", "resnet34"])
     parser.add_argument("--teacher_ckpt", default="./checkpoints/ckpt.pth")
     parser.add_argument("--real_list_path", default="./datasets/AVLips/0_real")
@@ -252,9 +253,12 @@ def main():
 
     from lightweight.models import LipFDRegionLight
     from lightweight.models.lipfd_region_light import load_global_weights
-    model = LipFDRegionLight(clip_name="ViT-L/14", backbone=args.backbone)
+    model = LipFDRegionLight(clip_name=args.clip_name, backbone=args.backbone)
+    print(f"CLIP: {args.clip_name}, global feature dim: {model.global_feature_dim}")
     info = load_global_weights(model, args.teacher_ckpt)
     print(f"Loaded global weights: {info['loaded_keys']} keys")
+    if info.get("skipped_shape_keys"):
+        print(f"Skipped shape-mismatched global weights: {len(info['skipped_shape_keys'])} keys")
     model.freeze_global_encoder()
     model.to(device)
 

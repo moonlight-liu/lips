@@ -1,0 +1,127 @@
+{
+  "ckpt": "./lightweight/results/checkpoints/region_resnet18_clip_b32_ra0p01/best.pth",
+  "clip": "ViT-B/32",
+  "backbone": "resnet18",
+  "batch_size": 16,
+  "max_batches": 3,
+  "device": "cuda:0",
+  "runs": [
+    {
+      "num_workers": 4,
+      "prefetch_factor": 2,
+      "persistent_workers": true,
+      "batch_size": 16,
+      "metrics": {
+        "acc": 0.8958333333333334,
+        "ap": -0.0,
+        "fpr": 0.10416666666666667,
+        "fnr": 0.0,
+        "tp": 0,
+        "tn": 43,
+        "fp": 5,
+        "fn": 0
+      },
+      "timing": {
+        "num_samples": 48,
+        "num_batches": 3,
+        "total_seconds_including_metrics": 6.188294074498117,
+        "loop_seconds_excluding_metrics": 6.176212407648563,
+        "metric_seconds": 0.01208152063190937,
+        "data_wait_seconds": 4.650422550737858,
+        "transfer_forward_seconds": 1.2680133981630206,
+        "score_collect_seconds": 0.0007756110280752182,
+        "other_loop_overhead_seconds": 0.25700084771960974,
+        "seconds_per_sample": 0.12892279321871078,
+        "fps_including_metrics": 7.756580314727996,
+        "fps_excluding_metrics": 7.771753435901468,
+        "data_wait_ms_per_sample": 96.88380314037204,
+        "transfer_forward_ms_per_sample": 26.41694579506293,
+        "total_ms_per_sample": 128.92279321871078
+      },
+      "batch_timing_summary": {
+        "first_batch": {
+          "batch": 1,
+          "batch_size": 16,
+          "data_wait_ms": 4586.582874879241,
+          "transfer_forward_ms": 1049.8030995950103,
+          "score_collect_ms": 0.47964975237846375
+        },
+        "last_batch": {
+          "batch": 3,
+          "batch_size": 16,
+          "data_wait_ms": 63.1203381344676,
+          "transfer_forward_ms": 102.2676844149828,
+          "score_collect_ms": 0.12749433517456055
+        }
+      }
+    },
+    {
+      "num_workers": 8,
+      "prefetch_factor": 2,
+      "persistent_workers": true,
+      "batch_size": 16,
+      "metrics": {
+        "acc": 0.8958333333333334,
+        "ap": -0.0,
+        "fpr": 0.10416666666666667,
+        "fnr": 0.0,
+        "tp": 0,
+        "tn": 43,
+        "fp": 5,
+        "fn": 0
+      },
+      "timing": {
+        "num_samples": 48,
+        "num_batches": 3,
+        "total_seconds_including_metrics": 7.881323198787868,
+        "loop_seconds_excluding_metrics": 7.8751329919323325,
+        "metric_seconds": 0.00619005411863327,
+        "data_wait_seconds": 7.226791637018323,
+        "transfer_forward_seconds": 0.33294727001339197,
+        "score_collect_seconds": 0.0006169173866510391,
+        "other_loop_overhead_seconds": 0.31477716751396656,
+        "seconds_per_sample": 0.16419423330808058,
+        "fps_including_metrics": 6.090347875516931,
+        "fps_excluding_metrics": 6.095135161421848,
+        "data_wait_ms_per_sample": 150.5581591045484,
+        "transfer_forward_ms_per_sample": 6.936401458612333,
+        "total_ms_per_sample": 164.19423330808058
+      },
+      "batch_timing_summary": {
+        "first_batch": {
+          "batch": 1,
+          "batch_size": 16,
+          "data_wait_ms": 7225.89651402086,
+          "transfer_forward_ms": 125.45332685112953,
+          "score_collect_ms": 0.27236994355916977
+        },
+        "last_batch": {
+          "batch": 3,
+          "batch_size": 16,
+          "data_wait_ms": 0.35081058740615845,
+          "transfer_forward_ms": 100.97359027713537,
+          "score_collect_ms": 0.2148980274796486
+        }
+      }
+    }
+  ],
+  "best_by_fps": {
+    "num_workers": 4,
+    "prefetch_factor": 2,
+    "persistent_workers": true,
+    "batch_size": 16,
+    "num_samples": 48,
+    "num_batches": 3,
+    "fps_including_metrics": 7.756580314727996,
+    "total_ms_per_sample": 128.92279321871078,
+    "data_wait_ms_per_sample": 96.88380314037204,
+    "transfer_forward_ms_per_sample": 26.41694579506293,
+    "data_wait_seconds": 4.650422550737858,
+    "transfer_forward_seconds": 1.2680133981630206,
+    "total_seconds": 6.188294074498117,
+    "acc": 0.8958333333333334,
+    "ap": -0.0,
+    "fpr": 0.10416666666666667,
+    "fnr": 0.0
+  }
+}

@@ -50,6 +50,7 @@ def bench(model, device, batch_size, warmup, iters):
 
 def main():
     parser = argparse.ArgumentParser()
+    parser.add_argument("--clip_name", default=None, choices=["ViT-L/14", "ViT-B/16", "ViT-B/32"])
     parser.add_argument("--backbone", default="resnet18", choices=["resnet18", "resnet34"])
     parser.add_argument("--ckpt", default=None, help="Optional trained region-light checkpoint.")
     parser.add_argument("--device", default="cuda:0")
@@ -62,18 +63,22 @@ def main():
     from lightweight.models import LipFDRegionLight
 
     device = torch.device(args.device if torch.cuda.is_available() or not args.device.startswith("cuda") else "cpu")
-    model = LipFDRegionLight(clip_name="ViT-L/14", backbone=args.backbone)
+    ckpt_state = None
     if args.ckpt:
-        state = torch.load(args.ckpt, map_location="cpu")
-        model.load_state_dict(state["model"] if "model" in state else state)
+        ckpt_state = torch.load(args.ckpt, map_location="cpu")
+    ckpt_args = ckpt_state.get("args", {}) if isinstance(ckpt_state, dict) else {}
+    clip_name = args.clip_name or ckpt_args.get("clip_name", "ViT-L/14")
+    model = LipFDRegionLight(clip_name=clip_name, backbone=args.backbone)
+    if ckpt_state is not None:
+        model.load_state_dict(ckpt_state["model"] if "model" in ckpt_state else ckpt_state)
     model.to(device).eval()
 
-    results = {"backbone": args.backbone, "device": str(device), "batch_results": []}
+    results = {"clip": clip_name, "backbone": args.backbone, "device": str(device), "batch_results": []}
     for bs in args.batch_sizes:
         result = bench(model, device, bs, args.warmup, args.iters)
         results["batch_results"].append(result)
         print(
-            f"{args.backbone} bs={bs:<3} mean={result['mean_ms']:.2f} ms "
+            f"{clip_name} {args.backbone} bs={bs:<3} mean={result['mean_ms']:.2f} ms "
             f"latency={result['latency_ms_per_sample']:.2f} ms/sample "
             f"throughput={result['throughput_samples_per_s']:.2f} samples/s"
         )

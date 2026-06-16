@@ -1,0 +1,80 @@
+{
+  "device": "cuda:0",
+  "backbone": "resnet18",
+  "warmup": 1,
+  "iters": 2,
+  "variants": [
+    {
+      "clip": "ViT-B/16",
+      "backbone": "resnet18",
+      "total_params": 160799527,
+      "total_params_m": 160.799527,
+      "encoder_params": 149620737,
+      "encoder_params_m": 149.620737,
+      "backbone_params": 11178562,
+      "backbone_params_m": 11.178562,
+      "conv1_params": 228,
+      "batch_results": [
+        {
+          "batch_size": 1,
+          "feature_shape": [
+            1,
+            512
+          ],
+          "clip_encode": {
+            "mean_ms": 7.388785947114229,
+            "median_ms": 7.388785947114229,
+            "min_ms": 7.321787066757679,
+            "max_ms": 7.455784827470779,
+            "latency_ms_per_sample": 7.388785947114229,
+            "throughput_samples_per_s": 135.3402314206383
+          },
+          "full_forward": {
+            "mean_ms": 39.30231463164091,
+            "median_ms": 39.30231463164091,
+            "min_ms": 39.19165022671223,
+            "max_ms": 39.412979036569595,
+            "latency_ms_per_sample": 39.30231463164091,
+            "throughput_samples_per_s": 25.443794070971464
+          }
+        }
+      ]
+    },
+    {
+      "clip": "ViT-B/32",
+      "backbone": "resnet18",
+      "total_params": 162456103,
+      "total_params_m": 162.456103,
+      "encoder_params": 151277313,
+      "encoder_params_m": 151.277313,
+      "backbone_params": 11178562,
+      "backbone_params_m": 11.178562,
+      "conv1_params": 228,
+      "batch_results": [
+        {
+          "batch_size": 1,
+          "feature_shape": [
+            1,
+            512
+          ],
+          "clip_encode": {
+            "mean_ms": 5.213410593569279,
+            "median_ms": 5.213410593569279,
+            "min_ms": 5.185412243008614,
+            "max_ms": 5.241408944129944,
+            "latency_ms_per_sample": 5.213410593569279,
+            "throughput_samples_per_s": 191.81301415881114
+          },
+          "full_forward": {
+            "mean_ms": 39.47492549195886,
+            "median_ms": 39.47492549195886,
+            "min_ms": 39.451612159609795,
+            "max_ms": 39.49823882430792,
+            "latency_ms_per_sample": 39.47492549195886,
+            "throughput_samples_per_s": 25.332536731543737
+          }
+        }
+      ]
+    }
+  ]
+}

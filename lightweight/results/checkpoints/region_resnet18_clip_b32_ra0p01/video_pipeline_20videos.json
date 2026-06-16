@@ -1,0 +1,49 @@
+{
+  "ckpt": "./lightweight/results/checkpoints/region_resnet18_clip_b32_ra0p01/best.pth",
+  "clip": "ViT-B/32",
+  "backbone": "resnet18",
+  "threshold": 0.5,
+  "batch_size": 16,
+  "video_root": "./AVLips",
+  "audio_root": "./AVLips/wav",
+  "video_path": null,
+  "audio_path": null,
+  "max_videos_per_class": 10,
+  "device": "cuda:0",
+  "params": {
+    "total": 162456103,
+    "total_m": 162.456103,
+    "encoder_m": 151.277313,
+    "backbone_m": 11.178562
+  },
+  "metrics": {
+    "acc": 0.48,
+    "ap": 0.5155474814996158,
+    "fpr": 0.99,
+    "fnr": 0.05,
+    "tp": 95,
+    "tn": 1,
+    "fp": 99,
+    "fn": 5
+  },
+  "timing": {
+    "video_decode_seconds": 1.380541231483221,
+    "audio_mel_seconds": 2.5740668568760157,
+    "compose_big_image_seconds": 7.802787020802498,
+    "tensor_transform_seconds": 2.369538533501327,
+    "transfer_forward_seconds": 2.79132863227278,
+    "num_batches": 13,
+    "total_seconds": 16.962868057191372,
+    "num_videos_requested": 20,
+    "num_videos_ok": 20,
+    "num_windows": 200,
+    "windows_per_second": 11.790458979323985,
+    "videos_per_second": 1.1790458979323983,
+    "total_ms_per_window": 84.81434028595686,
+    "transfer_forward_ms_per_window": 13.9566431613639,
+    "video_decode_ms_per_video": 69.02706157416105,
+    "audio_mel_ms_per_video": 128.70334284380078,
+    "pre_model_ms_per_window": 70.63466821331531
+  },
+  "failures": []
+}

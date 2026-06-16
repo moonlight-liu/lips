@@ -1,0 +1,46 @@
+{
+  "ckpt": "./lightweight/results/checkpoints/region_resnet18_clip_b32_ra0p01/best.pth",
+  "clip": "ViT-B/32",
+  "backbone": "resnet18",
+  "threshold": 0.5,
+  "batch_size": 16,
+  "preprocess_device": "gpu",
+  "video_root": "./AVLips",
+  "audio_root": "./AVLips/wav",
+  "video_path": "./AVLips/0_real/0.mp4",
+  "audio_path": "./AVLips/0_real/0.mp4",
+  "max_videos_per_class": 5,
+  "device": "cuda:0",
+  "params": {
+    "total": 162456103,
+    "total_m": 162.456103,
+    "encoder_m": 151.277313,
+    "backbone_m": 11.178562
+  },
+  "metrics": null,
+  "timing": {
+    "video_decode_seconds": 0.05099184700520709,
+    "audio_mel_seconds": 0.0,
+    "compose_big_image_seconds": 0.0,
+    "tensor_transform_seconds": 0.0,
+    "transfer_forward_seconds": 0.0,
+    "num_batches": 0,
+    "total_seconds": 0.9855464400025085,
+    "num_videos_requested": 1,
+    "num_videos_ok": 0,
+    "num_windows": 0,
+    "windows_per_second": 0.0,
+    "videos_per_second": 0.0,
+    "total_ms_per_window": null,
+    "transfer_forward_ms_per_window": null,
+    "video_decode_ms_per_video": null,
+    "audio_mel_ms_per_video": null,
+    "pre_model_ms_per_window": null
+  },
+  "failures": [
+    {
+      "video_path": "AVLips/0_real/0.mp4",
+      "error": "NoBackendError()"
+    }
+  ]
+}

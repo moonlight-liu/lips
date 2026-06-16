@@ -16,20 +16,22 @@ def count_params(module):
 
 def main():
     parser = argparse.ArgumentParser()
+    parser.add_argument("--clip_name", default="ViT-L/14", choices=["ViT-L/14", "ViT-B/16", "ViT-B/32"])
     parser.add_argument("--backbone", default="resnet18", choices=["resnet18", "resnet34"])
     parser.add_argument("--output", default=None)
     args = parser.parse_args()
 
     from lightweight.models import LipFDRegionLight
 
-    model = LipFDRegionLight(clip_name="ViT-L/14", backbone=args.backbone)
+    model = LipFDRegionLight(clip_name=args.clip_name, backbone=args.backbone)
     total = count_params(model)
     encoder = count_params(model.encoder)
     backbone = count_params(model.backbone)
     conv1 = count_params(model.conv1)
     result = {
-        "clip": "ViT-L/14",
+        "clip": args.clip_name,
         "backbone": args.backbone,
+        "global_feature_dim": model.global_feature_dim,
         "total_params": total,
         "total_params_m": total / 1e6,
         "encoder_params": encoder,

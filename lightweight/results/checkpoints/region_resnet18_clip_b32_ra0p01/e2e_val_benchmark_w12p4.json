@@ -1,0 +1,60 @@
+{
+  "ckpt": "./lightweight/results/checkpoints/region_resnet18_clip_b32_ra0p01/best.pth",
+  "clip": "ViT-B/32",
+  "backbone": "resnet18",
+  "threshold": 0.5,
+  "batch_size": 16,
+  "num_workers": 12,
+  "prefetch_factor": 4,
+  "persistent_workers": true,
+  "device": "cuda:0",
+  "params": {
+    "total": 162456103,
+    "total_m": 162.456103,
+    "encoder_m": 151.277313,
+    "backbone_m": 11.178562
+  },
+  "metrics": {
+    "acc": 0.9266001174398121,
+    "ap": 0.9778793471246024,
+    "fpr": 0.089586969168121,
+    "fnr": 0.05690574985180794,
+    "tp": 1591,
+    "tn": 1565,
+    "fp": 154,
+    "fn": 96
+  },
+  "timing": {
+    "num_samples": 3406,
+    "num_batches": 213,
+    "total_seconds_including_metrics": 78.57629241235554,
+    "loop_seconds_excluding_metrics": 78.56209760997444,
+    "metric_seconds": 0.014194628223776817,
+    "data_wait_seconds": 49.33060342725366,
+    "transfer_forward_seconds": 28.725111570209265,
+    "score_collect_seconds": 0.03903568256646395,
+    "other_loop_overhead_seconds": 0.46734692994505167,
+    "seconds_per_sample": 0.02306996254032752,
+    "fps_including_metrics": 43.34640761778207,
+    "fps_excluding_metrics": 43.35423955848609,
+    "data_wait_ms_per_sample": 14.483441992734488,
+    "transfer_forward_ms_per_sample": 8.433679263126619,
+    "total_ms_per_sample": 23.069962540327523
+  },
+  "batch_timing_summary": {
+    "first_batch": {
+      "batch": 1,
+      "batch_size": 16,
+      "data_wait_ms": 7273.043260909617,
+      "transfer_forward_ms": 2021.4374111965299,
+      "score_collect_ms": 0.4565492272377014
+    },
+    "last_batch": {
+      "batch": 213,
+      "batch_size": 14,
+      "data_wait_ms": 0.10102801024913788,
+      "transfer_forward_ms": 164.87679909914732,
+      "score_collect_ms": 0.05657225847244263
+    }
+  }
+}

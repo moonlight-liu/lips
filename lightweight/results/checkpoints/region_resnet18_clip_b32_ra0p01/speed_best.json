@@ -1,0 +1,35 @@
+{
+  "clip": "ViT-B/32",
+  "backbone": "resnet18",
+  "device": "cuda:0",
+  "batch_results": [
+    {
+      "batch_size": 1,
+      "mean_ms": 41.92655846476555,
+      "median_ms": 41.343958117067814,
+      "throughput_samples_per_s": 23.851230261133527,
+      "latency_ms_per_sample": 41.92655846476555
+    },
+    {
+      "batch_size": 4,
+      "mean_ms": 43.405640069395304,
+      "median_ms": 43.09858055785298,
+      "throughput_samples_per_s": 92.1539227069328,
+      "latency_ms_per_sample": 10.851410017348826
+    },
+    {
+      "batch_size": 8,
+      "mean_ms": 42.797058783471584,
+      "median_ms": 42.74396784603596,
+      "throughput_samples_per_s": 186.9287335953478,
+      "latency_ms_per_sample": 5.349632347933948
+    },
+    {
+      "batch_size": 16,
+      "mean_ms": 72.26405748166144,
+      "median_ms": 72.30207696557045,
+      "throughput_samples_per_s": 221.41020802852572,
+      "latency_ms_per_sample": 4.51650359260384
+    }
+  ]
+}
