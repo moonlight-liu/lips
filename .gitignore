@@ -6,4 +6,12 @@ datasets/*
 checkpoints/*
 temp/*
 *.pth
-web
+
+# Web demo generated/runtime files
+*.pyc
+web/backend/__pycache__/
+web/backend/services/__pycache__/
+web/backend/runtime/
+web/frontend/node_modules/
+web/frontend/dist/
+web/logs/
